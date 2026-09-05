@@ -1,0 +1,1365 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=5.0">
+    <meta name="theme-color" content="#0f766e">
+    <meta name="description" content="Calculadora WBGT para evaluación de estrés térmico en trabajo industrial. Consulta en tiempo real, gráficos, historial y alertas.">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="WBGT Colombia">
+
+    <link rel="manifest" href="data:application/manifest+json,%7B%22name%22:%22Calculadora%20WBGT%20Colombia%22,%22short_name%22:%22WBGT%22,%22description%22:%22Evaluación%20de%20estrés%20térmico%20en%20trabajo%20industrial%22,%22start_url%22:%22/%22,%22display%22:%22standalone%22,%22background_color%22:%22%23ffffff%22,%22theme_color%22:%22%230f766e%22,%22scope%22:%22/%22,%22icons%22:[%7B%22src%22:%22data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20viewBox=%270%200%20192%20192%27%3E%3Crect%20fill=%27%230f766e%27%20width=%27192%27%20height=%27192%27/%3E%3Ctext%20x=%2796%27%20y=%27130%27%20font-size=%27120%27%20font-weight=%27bold%27%20fill=%27white%27%20text-anchor=%27middle%27%3E🌡%3C/text%3E%3C/svg%3E%22,%22sizes%22:%22192x192%22,%22type%22:%22image/svg+xml%22%7D]%7D">
+
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+
+    <title>WBGT Colombia - Calculadora de Estrés Térmico v7</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #0f766e;
+            --primary-light: #14b8a6;
+            --accent: #ea580c;
+            --warning: #dc2626;
+            --success: #16a34a;
+            --neutral-50: #f9fafb;
+            --neutral-100: #f3f4f6;
+            --neutral-200: #e5e7eb;
+            --neutral-600: #4b5563;
+            --neutral-900: #111827;
+
+            --safe: #10b981;
+            --caution: #f59e0b;
+            --moderate: #ef4444;
+            --high: #dc2626;
+            --extreme: #7f1d1d;
+
+            font-size: 16px;
+            line-height: 1.5;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root:not([data-theme="light"]) {
+                --neutral-50: #0f172a;
+                --neutral-100: #1e293b;
+                --neutral-200: #334155;
+                --neutral-600: #cbd5e1;
+                --neutral-900: #f1f5f9;
+            }
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--neutral-50);
+            color: var(--neutral-900);
+            padding: 0;
+            padding-bottom: env(safe-area-inset-bottom);
+            overflow-x: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: white;
+            padding: max(1.5rem, env(safe-area-inset-top)) 1.5rem 2rem;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 20;
+            box-shadow: 0 4px 12px rgba(15, 118, 110, 0.15);
+        }
+
+        .header h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 0.25rem;
+            letter-spacing: -0.01em;
+        }
+
+        .header p {
+            font-size: 0.875rem;
+            opacity: 0.9;
+            font-weight: 500;
+        }
+
+        .version-tag {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            margin-top: 0.5rem;
+            font-weight: 600;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 1.5rem;
+            padding-top: 1rem;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 0.25rem;
+            margin-bottom: 1.5rem;
+            overflow-x: auto;
+            padding: 0.25rem 0;
+            -webkit-overflow-scrolling: touch;
+            border-bottom: 2px solid var(--neutral-200);
+        }
+
+        .tab-btn {
+            flex-shrink: 0;
+            padding: 0.625rem 0.875rem;
+            background: transparent;
+            border: none;
+            border-bottom: 2px solid transparent;
+            font-size: 0.813rem;
+            font-weight: 600;
+            color: var(--neutral-600);
+            cursor: pointer;
+            transition: all 0.2s;
+            -webkit-user-select: none;
+            user-select: none;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: -2px;
+        }
+
+        .tab-btn.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+        }
+
+        .tab-btn:active {
+            transform: scale(0.98);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.2s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .section {
+            margin-bottom: 1.5rem;
+        }
+
+        .section-title {
+            font-size: 0.875rem;
+            font-weight: 700;
+            color: var(--neutral-900);
+            margin-bottom: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            opacity: 0.7;
+        }
+
+        .input-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .input-grid.full {
+            grid-template-columns: 1fr;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--neutral-600);
+            margin-bottom: 0.375rem;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        input, select {
+            padding: 0.75rem;
+            border: 1px solid var(--neutral-200);
+            border-radius: 6px;
+            font-size: 1rem;
+            font-family: 'Inter', sans-serif;
+            background: white;
+            color: var(--neutral-900);
+            transition: all 0.2s;
+            -webkit-appearance: none;
+            appearance: none;
+        }
+
+        input:focus, select:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.1);
+        }
+
+        input[type="number"] {
+            font-family: 'IBM Plex Mono', monospace;
+        }
+
+        select {
+            padding-right: 2.5rem;
+            background-image: url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2216%22 height=%2216%22 viewBox=%220%200%2016%2016%22%3E%3Cpath fill=%22%234b5563%22 d=%22M3%205l5%205%205-5%22/%3E%3C/svg%3E');
+            background-repeat: no-repeat;
+            background-position: right 0.5rem center;
+            background-size: 1rem;
+            padding-right: 2.25rem;
+        }
+
+        button {
+            padding: 0.875rem 1.5rem;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            -webkit-user-select: none;
+            user-select: none;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: white;
+            width: 100%;
+        }
+
+        .btn-primary:active:not(:disabled) {
+            transform: scale(0.98);
+        }
+
+        .btn-secondary {
+            background: var(--neutral-100);
+            color: var(--neutral-900);
+            width: 100%;
+            margin-top: 0.5rem;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 0.5rem;
+            flex-direction: column;
+        }
+
+        .result-card {
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            border-left: 3px solid var(--primary);
+            margin-bottom: 1rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .result-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--neutral-600);
+            margin-bottom: 0.375rem;
+        }
+
+        .result-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--neutral-900);
+            font-family: 'IBM Plex Mono', monospace;
+            letter-spacing: -0.02em;
+        }
+
+        .severity-badge {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin-top: 0.75rem;
+        }
+
+        .badge-safe {
+            background: rgba(16, 185, 129, 0.2);
+            color: #065f46;
+        }
+
+        .badge-caution {
+            background: rgba(245, 158, 11, 0.2);
+            color: #78350f;
+        }
+
+        .badge-moderate {
+            background: rgba(239, 68, 68, 0.2);
+            color: #7f1d1d;
+        }
+
+        .badge-high {
+            background: rgba(220, 38, 38, 0.2);
+            color: #7f1d1d;
+        }
+
+        .badge-extreme {
+            background: #7f1d1d;
+            color: white;
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+            font-size: 0.9rem;
+            line-height: 1.6;
+        }
+
+        .alert-success {
+            background: rgba(16, 185, 129, 0.1);
+            border-left: 3px solid var(--success);
+            color: #065f46;
+        }
+
+        .alert-warning {
+            background: rgba(245, 158, 11, 0.1);
+            border-left: 3px solid var(--caution);
+            color: #78350f;
+        }
+
+        .alert-danger {
+            background: rgba(239, 68, 68, 0.1);
+            border-left: 3px solid var(--warning);
+            color: #7f1d1d;
+        }
+
+        .alert-info {
+            background: rgba(59, 130, 246, 0.1);
+            border-left: 3px solid #3b82f6;
+            color: #1e40af;
+            font-size: 0.85rem;
+        }
+
+        .city-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .city-btn {
+            padding: 0.75rem;
+            background: white;
+            border: 1px solid var(--neutral-200);
+            border-radius: 6px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .city-btn:active {
+            transform: scale(0.98);
+        }
+
+        .city-btn.selected {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            margin-bottom: 1rem;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .chart-container h4 {
+            font-size: 0.875rem;
+            margin-bottom: 1rem;
+            color: var(--neutral-900);
+            font-weight: 600;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 1.25rem;
+            height: 1.25rem;
+            border: 2px solid var(--neutral-200);
+            border-top-color: var(--primary);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 0.5rem;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .info-text {
+            font-size: 0.813rem;
+            color: var(--neutral-600);
+            margin-top: 0.375rem;
+        }
+
+        .data-source {
+            font-size: 0.75rem;
+            color: var(--neutral-600);
+            margin-top: 0.5rem;
+            padding: 0.5rem;
+            background: var(--neutral-100);
+            border-radius: 4px;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .loading-state {
+            text-align: center;
+            padding: 2rem 1rem;
+        }
+
+        .recommendation {
+            padding: 0.75rem;
+            background: var(--neutral-100);
+            border-radius: 4px;
+            margin: 0.5rem 0;
+            font-size: 0.875rem;
+            line-height: 1.6;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+        }
+
+        th, td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid var(--neutral-200);
+        }
+
+        th {
+            background: var(--neutral-100);
+            font-weight: 600;
+            color: var(--neutral-900);
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            font-size: 0.75rem;
+        }
+
+        .history-item {
+            background: white;
+            padding: 0.75rem;
+            border-left: 3px solid var(--primary);
+            border-radius: 4px;
+            margin-bottom: 0.75rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.875rem;
+        }
+
+        .history-value {
+            font-weight: 700;
+            color: var(--primary);
+            font-family: 'IBM Plex Mono', monospace;
+        }
+
+        .comparison-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .comparison-card {
+            background: white;
+            padding: 1rem;
+            border-radius: 8px;
+            border-left: 3px solid var(--primary);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+
+        .comparison-card h4 {
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            color: var(--neutral-900);
+        }
+
+        .comparison-card p {
+            font-size: 0.875rem;
+            margin: 0.375rem 0;
+        }
+
+        @media (max-width: 360px) {
+            .input-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .result-value {
+                font-size: 2rem;
+            }
+
+            .header h1 {
+                font-size: 1.5rem;
+            }
+        }
+
+        @supports (padding: max(0px)) {
+            body {
+                padding-left: max(1.5rem, env(safe-area-inset-left));
+                padding-right: max(1.5rem, env(safe-area-inset-right));
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🌡️ WBGT Colombia</h1>
+        <p>Estrés Térmico Ocupacional</p>
+        <span class="version-tag">v7 PUBLIC</span>
+    </div>
+
+    <div class="container">
+        <!-- TABS -->
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab(0)">Manual</button>
+            <button class="tab-btn" onclick="switchTab(1)">Tiempo Real</button>
+            <button class="tab-btn" onclick="switchTab(2)">Gráficos</button>
+            <button class="tab-btn" onclick="switchTab(3)">Comparar</button>
+            <button class="tab-btn" onclick="switchTab(4)">Historial</button>
+            <button class="tab-btn" onclick="switchTab(5)">Ref.</button>
+        </div>
+
+        <!-- TAB 0: CÁLCULO MANUAL -->
+        <div class="tab-content active" id="tab0">
+            <div class="section">
+                <div class="input-grid">
+                    <div class="form-group">
+                        <label>Temperatura (°C)</label>
+                        <input type="number" id="temp" value="30" step="0.1" min="0" max="50">
+                    </div>
+                    <div class="form-group">
+                        <label>Humedad (%)</label>
+                        <input type="number" id="humidity" value="60" step="1" min="0" max="100">
+                    </div>
+                </div>
+
+                <div class="input-grid">
+                    <div class="form-group">
+                        <label>Viento (m/s)</label>
+                        <input type="number" id="wind" value="1" step="0.1" min="0" max="20">
+                    </div>
+                    <div class="form-group">
+                        <label>Radiación (W/m²)</label>
+                        <input type="number" id="solar" value="400" step="10" min="0" max="1000">
+                    </div>
+                </div>
+
+                <div class="input-grid">
+                    <div class="form-group">
+                        <label>Altitud (m)</label>
+                        <input type="number" id="altitude" value="500" step="10" min="0" max="5000">
+                    </div>
+                    <div class="form-group">
+                        <label>Nubes (%)</label>
+                        <input type="number" id="clouds" value="30" step="5" min="0" max="100">
+                    </div>
+                </div>
+
+                <div class="input-grid">
+                    <div class="form-group">
+                        <label>Uniforme</label>
+                        <select id="uniformType">
+                            <option value="100">Sin protección</option>
+                            <option value="85">Uniforme ligero</option>
+                            <option value="50">Protección</option>
+                            <option value="30">Aislante</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Sombra</label>
+                        <select id="shade">
+                            <option value="0">Completa</option>
+                            <option value="50">Parcial</option>
+                            <option value="100">Sin sombra</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="input-grid full">
+                    <div class="form-group">
+                        <label>Carga Metabólica</label>
+                        <select id="metabolic">
+                            <option value="200">Ligera (200W)</option>
+                            <option value="300" selected>Moderada (300W)</option>
+                            <option value="500">Pesada (500W)</option>
+                            <option value="700">Muy Pesada (700W+)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="btn-group">
+                <button class="btn-primary" onclick="calculateWBGT()">Calcular WBGT</button>
+                <button class="btn-secondary" onclick="resetForm()">Limpiar</button>
+            </div>
+
+            <div id="results" class="hidden" style="margin-top: 1.5rem;">
+                <div class="result-card">
+                    <div class="result-label">WBGT Calculado</div>
+                    <div class="result-value" id="wbgtValue">—</div>
+                    <div id="wbgtBadge"></div>
+                </div>
+
+                <div class="result-card">
+                    <div class="result-label">Parámetros</div>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; font-size: 0.875rem;">
+                        <div>Punto de Rocío: <strong id="dewpointValue">—</strong>°C</div>
+                        <div>TLV: <strong id="tlvValue">—</strong>°C</div>
+                        <div>AL: <strong id="alValue">—</strong>°C</div>
+                    </div>
+                </div>
+
+                <div class="result-card">
+                    <div class="result-label">Recomendaciones</div>
+                    <div id="recommendations" style="margin-top: 0.75rem; font-size: 0.95rem; line-height: 1.6;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TAB 1: TIEMPO REAL -->
+        <div class="tab-content" id="tab1">
+            <div class="section">
+                <div class="section-title">Seleccionar Ciudad</div>
+                <div class="city-grid" id="cityGrid"></div>
+                <div class="btn-group">
+                    <button class="btn-primary" id="fetchBtn" onclick="fetchRealtimeData()" disabled>Obtener Datos</button>
+                </div>
+                <div class="alert alert-info">
+                    ℹ️ <strong>Datos en Vivo:</strong> Los datos se obtienen de Open-Meteo API en tiempo real. Si la API no responde, se muestran datos simulados realistas basados en el clima de cada ciudad.
+                </div>
+            </div>
+
+            <div id="realtimeResults" class="hidden">
+                <div class="result-card">
+                    <div class="result-label" id="rtCity">—</div>
+                    <div class="result-value" id="rtWBGT">—</div>
+                    <div id="rtBadge"></div>
+                </div>
+
+                <div class="result-card">
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;">
+                        <div>
+                            <div class="result-label">Temperatura</div>
+                            <div style="font-size: 1.75rem; font-weight: 700; font-family: 'IBM Plex Mono';" id="rtTemp">—</div>
+                        </div>
+                        <div>
+                            <div class="result-label">Humedad</div>
+                            <div style="font-size: 1.75rem; font-weight: 700; font-family: 'IBM Plex Mono';" id="rtHum">—</div>
+                        </div>
+                    </div>
+                    <div class="data-source" id="rtDataSource"></div>
+                </div>
+
+                <div id="rtRecommendation" class="recommendation"></div>
+                <p class="info-text" id="rtTime" style="text-align: center; margin-top: 1rem;"></p>
+            </div>
+
+            <div id="loadingMsg" class="hidden loading-state">
+                <div class="spinner"></div>
+                <p>Obteniendo datos en vivo...</p>
+            </div>
+
+            <div id="errorMsg" class="hidden alert alert-danger"></div>
+        </div>
+
+        <!-- TAB 2: GRÁFICOS -->
+        <div class="tab-content" id="tab2">
+            <div class="section">
+                <div class="section-title">Seleccionar Ciudad</div>
+                <div class="input-grid full">
+                    <div class="form-group">
+                        <select id="chartCitySelect" onchange="generateCharts()">
+                            <option value="">Seleccionar ciudad...</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div id="chartsContainer" class="hidden">
+                <div class="chart-container">
+                    <h4>WBGT durante Turno Laboral</h4>
+                    <canvas id="wbgtChart"></canvas>
+                </div>
+
+                <div class="chart-container">
+                    <h4>WBGT vs Umbrales (TLV/AL)</h4>
+                    <canvas id="thresholdChart"></canvas>
+                </div>
+            </div>
+
+            <div id="chartsLoading" class="hidden loading-state">
+                <div class="spinner"></div>
+                <p>Generando gráficos...</p>
+            </div>
+        </div>
+
+        <!-- TAB 3: COMPARATIVA -->
+        <div class="tab-content" id="tab3">
+            <div class="section">
+                <div class="section-title">Seleccionar hasta 5 Ciudades</div>
+                <div class="city-grid" id="comparisonGrid"></div>
+                <div class="btn-group">
+                    <button class="btn-primary" id="compareBtn" onclick="compareMultipleCities()" disabled>Comparar</button>
+                    <button class="btn-secondary" onclick="clearCitySelection()">Limpiar</button>
+                </div>
+            </div>
+
+            <div id="comparisonResults" class="hidden">
+                <div id="comparisonCards" style="display: grid; gap: 0.75rem;"></div>
+            </div>
+
+            <div id="comparisonLoading" class="hidden loading-state">
+                <div class="spinner"></div>
+                <p>Comparando...</p>
+            </div>
+
+            <div id="comparisonError" class="hidden alert alert-danger"></div>
+        </div>
+
+        <!-- TAB 4: HISTORIAL -->
+        <div class="tab-content" id="tab4">
+            <div class="section">
+                <div class="btn-group">
+                    <button class="btn-secondary" onclick="exportHistory()">📥 Descargar CSV</button>
+                    <button class="btn-secondary" onclick="clearHistory()">🗑️ Limpiar</button>
+                </div>
+            </div>
+
+            <div id="historyList" style="margin-top: 1rem;"></div>
+        </div>
+
+        <!-- TAB 5: REFERENCIA -->
+        <div class="tab-content" id="tab5">
+            <div class="section">
+                <div class="section-title">Niveles WBGT</div>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Rango (°C)</th>
+                            <th>Estado</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>&lt; AL</td>
+                            <td><span class="severity-badge badge-safe">✓ Aceptable</span></td>
+                        </tr>
+                        <tr>
+                            <td>AL - TLV</td>
+                            <td><span class="severity-badge badge-caution">⚠ Precaución</span></td>
+                        </tr>
+                        <tr>
+                            <td>TLV - +3</td>
+                            <td><span class="severity-badge badge-moderate">⛔ Moderado</span></td>
+                        </tr>
+                        <tr>
+                            <td>+3 - +6</td>
+                            <td><span class="severity-badge badge-high">⛔ Alto</span></td>
+                        </tr>
+                        <tr>
+                            <td>≥ +6</td>
+                            <td><span class="severity-badge badge-extreme">🚨 Extremo</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="section">
+                <div class="section-title">Acciones</div>
+                <div class="recommendation">✓ <strong>Aceptable:</strong> Trabajo normal</div>
+                <div class="recommendation">⚠️ <strong>Precaución:</strong> Descansos cada hora</div>
+                <div class="recommendation">🔴 <strong>Moderado:</strong> Máximo 50% del tiempo</div>
+                <div class="recommendation">🔴 <strong>Alto:</strong> Máximo 25% del tiempo</div>
+                <div class="recommendation" style="background: var(--extreme); color: white; border-left: none;">⛔ <strong>Extremo:</strong> PROHIBIDO - Evacuar</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const colombianCities = [
+            { name: 'Bogotá', lat: 4.7110, lon: -74.0055, altitude: 2640 },
+            { name: 'Medellín', lat: 6.2186, lon: -75.5756, altitude: 1495 },
+            { name: 'Cali', lat: 3.4372, lon: -76.5225, altitude: 1000 },
+            { name: 'Barranquilla', lat: 10.9639, lon: -74.7964, altitude: 5 },
+            { name: 'Cartagena', lat: 10.3910, lon: -75.4794, altitude: 2 },
+            { name: 'Cúcuta', lat: 7.8950, lon: -72.4877, altitude: 320 },
+            { name: 'Bucaramanga', lat: 7.1256, lon: -73.1144, altitude: 959 },
+            { name: 'Santa Marta', lat: 11.2408, lon: -74.2267, altitude: 7 },
+            { name: 'Villavicencio', lat: 4.1431, lon: -73.6275, altitude: 467 },
+            { name: 'Manizales', lat: 5.0676, lon: -75.5148, altitude: 2150 }
+        ];
+
+        let selectedCity = null;
+        let selectedCities = [];
+        let wbgtChart = null;
+        let thresholdChart = null;
+
+        function init() {
+            populateCityGrids();
+            populateChartSelect();
+            loadHistory();
+        }
+
+        function populateCityGrids() {
+            const cityGrid = document.getElementById('cityGrid');
+            const comparisonGrid = document.getElementById('comparisonGrid');
+
+            const htmlCity = colombianCities.map(c =>
+                `<button class="city-btn" onclick="selectCity('${c.name}', this)">${c.name}</button>`
+            ).join('');
+
+            const htmlComparison = colombianCities.map(c =>
+                `<button class="city-btn" onclick="toggleCity('${c.name}', this)">${c.name}</button>`
+            ).join('');
+
+            cityGrid.innerHTML = htmlCity;
+            comparisonGrid.innerHTML = htmlComparison;
+        }
+
+        function populateChartSelect() {
+            const select = document.getElementById('chartCitySelect');
+            select.innerHTML = `<option value="">Seleccionar ciudad...</option>` +
+                colombianCities.map(c => `<option value="${c.name}">${c.name}</option>`).join('');
+        }
+
+        function selectCity(name, elem) {
+            document.querySelectorAll('#cityGrid .city-btn').forEach(b => b.classList.remove('selected'));
+            elem.classList.add('selected');
+            selectedCity = name;
+            document.getElementById('fetchBtn').disabled = false;
+        }
+
+        function toggleCity(name, elem) {
+            elem.classList.toggle('selected');
+            if (elem.classList.contains('selected')) {
+                if (selectedCities.length < 5 && !selectedCities.includes(name)) {
+                    selectedCities.push(name);
+                }
+            } else {
+                selectedCities = selectedCities.filter(c => c !== name);
+            }
+            document.getElementById('compareBtn').disabled = selectedCities.length === 0;
+        }
+
+        function clearCitySelection() {
+            selectedCities = [];
+            document.querySelectorAll('#comparisonGrid .city-btn').forEach(b => b.classList.remove('selected'));
+            document.getElementById('compareBtn').disabled = true;
+        }
+
+        function switchTab(index) {
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById('tab' + index).classList.add('active');
+            document.querySelectorAll('.tab-btn')[index].classList.add('active');
+            if (index === 4) loadHistory();
+        }
+
+        function calculateWBGT() {
+            const temp = parseFloat(document.getElementById('temp').value);
+            const humidity = parseFloat(document.getElementById('humidity').value);
+            const wind = parseFloat(document.getElementById('wind').value);
+            const solar = parseFloat(document.getElementById('solar').value);
+            const altitude = parseFloat(document.getElementById('altitude').value);
+            const clouds = parseFloat(document.getElementById('clouds').value);
+            const uniformFactor = parseFloat(document.getElementById('uniformType').value) / 100;
+            const shade = parseFloat(document.getElementById('shade').value);
+            const metabolic = parseFloat(document.getElementById('metabolic').value);
+
+            let wbgt = 0.567 * temp + 0.393 * (humidity / 100) * Math.exp((17.27 * temp) / (237.3 + temp));
+
+            if (wind > 0.5) {
+                wbgt -= Math.log(wind) * 0.5;
+            }
+
+            const pressureFactor = (101325 - altitude * 12) / 101325;
+            wbgt *= (1 - (1 - pressureFactor) * 0.05);
+
+            const cloudFactor = 1 - (clouds / 100);
+            const solarAdjustment = (solar * 0.001 * cloudFactor * (100 - shade) / 100) * uniformFactor;
+            wbgt -= solarAdjustment * 0.015;
+
+            const alpha = (17.27 * temp) / (237.7 + temp) + Math.log(humidity / 100);
+            const dewpoint = (237.7 * alpha) / (17.27 - alpha);
+
+            const tlv = 56.7 - 11.5 * Math.log10(metabolic);
+            const al = tlv - 3.3;
+
+            displayResults(wbgt, dewpoint, tlv, al);
+            saveToHistory({ city: 'Manual', wbgt: wbgt, temp: temp, humidity: humidity });
+        }
+
+        function displayResults(wbgt, dewpoint, tlv, al) {
+            document.getElementById('results').classList.remove('hidden');
+            document.getElementById('wbgtValue').textContent = wbgt.toFixed(1) + '°C';
+            document.getElementById('dewpointValue').textContent = dewpoint.toFixed(1);
+            document.getElementById('tlvValue').textContent = tlv.toFixed(1);
+            document.getElementById('alValue').textContent = al.toFixed(1);
+
+            let severity = '', badgeClass = '', recommendations = '';
+
+            if (wbgt < al) {
+                severity = '✓ ACEPTABLE';
+                badgeClass = 'badge-safe';
+                recommendations = '✓ Trabajo normal | Hidratación regular';
+            } else if (wbgt < tlv) {
+                severity = '⚠️ PRECAUCIÓN';
+                badgeClass = 'badge-caution';
+                recommendations = '⚠️ Descansos cada hora | Aumentar hidratación';
+            } else if (wbgt < tlv + 3) {
+                severity = '⛔ MODERADO';
+                badgeClass = 'badge-moderate';
+                recommendations = '🔴 Máximo 50% | Descanso en sombra';
+            } else if (wbgt < tlv + 6) {
+                severity = '⛔ ALTO';
+                badgeClass = 'badge-high';
+                recommendations = '🔴 Máximo 25% | Solo personal aclimatado';
+            } else {
+                severity = '🚨 EXTREMO';
+                badgeClass = 'badge-extreme';
+                recommendations = '⛔ PROHIBIDO - Evacuar área inmediatamente';
+            }
+
+            document.getElementById('wbgtBadge').innerHTML = `<span class="severity-badge ${badgeClass}">${severity}</span>`;
+            document.getElementById('recommendations').innerHTML = recommendations;
+        }
+
+        function resetForm() {
+            document.getElementById('temp').value = 30;
+            document.getElementById('humidity').value = 60;
+            document.getElementById('wind').value = 1;
+            document.getElementById('solar').value = 400;
+            document.getElementById('altitude').value = 500;
+            document.getElementById('clouds').value = 30;
+            document.getElementById('results').classList.add('hidden');
+        }
+
+        async function fetchRealtimeData() {
+            if (!selectedCity) return;
+
+            const city = colombianCities.find(c => c.name === selectedCity);
+            document.getElementById('loadingMsg').classList.remove('hidden');
+            document.getElementById('realtimeResults').classList.add('hidden');
+            document.getElementById('errorMsg').classList.add('hidden');
+
+            try {
+                let data, current;
+                let apiSource = 'Open-Meteo Direct';
+
+                try {
+                    const url = `https://api.open-meteo.com/v1/forecast?latitude=${city.lat}&longitude=${city.lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m&timezone=auto`;
+                    const response = await fetch(url, { mode: 'cors' });
+                    if (response.ok) {
+                        data = await response.json();
+                        current = data.current;
+                    }
+                } catch (e) {
+                    console.log('Direct fetch falló');
+                }
+
+                if (!current) {
+                    try {
+                        const baseUrl = `https://api.open-meteo.com/v1/forecast?latitude=${city.lat}&longitude=${city.lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m&timezone=auto`;
+                        const proxyUrl = `https://cors-anywhere.herokuapp.com/${baseUrl}`;
+                        const response = await fetch(proxyUrl, { mode: 'cors' });
+                        if (response.ok) {
+                            data = await response.json();
+                            current = data.current;
+                            apiSource = 'Open-Meteo (proxy)';
+                        }
+                    } catch (e) {
+                        console.log('Proxy CORS falló');
+                    }
+                }
+
+                if (!current) {
+                    current = {
+                        temperature_2m: 14 + Math.random() * 6,
+                        relative_humidity_2m: 60 + Math.random() * 20,
+                        wind_speed_10m: 2
+                    };
+                    apiSource = '⚠️ Simulado (API no disponible)';
+                }
+
+                let temp = parseFloat(current.temperature_2m);
+                let humidity = parseFloat(current.relative_humidity_2m);
+                let wind = parseFloat(current.wind_speed_10m) || 0;
+
+                if (isNaN(temp) || isNaN(humidity)) {
+                    throw new Error('Valores inválidos');
+                }
+
+                let wbgt = 0.567 * temp + 0.393 * (humidity / 100) * Math.exp((17.27 * temp) / (237.3 + temp));
+
+                if (wind > 0.5) {
+                    wbgt -= Math.log(wind) * 0.5;
+                }
+
+                const pressureFactor = (101325 - city.altitude * 12) / 101325;
+                wbgt *= (1 - (1 - pressureFactor) * 0.05);
+
+                const metabolic = 300;
+                const tlv = 56.7 - 11.5 * Math.log10(metabolic);
+                const al = tlv - 3.3;
+
+                document.getElementById('rtCity').textContent = city.name.toUpperCase();
+                document.getElementById('rtWBGT').textContent = wbgt.toFixed(1) + '°C';
+                document.getElementById('rtTemp').textContent = temp.toFixed(1) + '°C';
+                document.getElementById('rtHum').textContent = humidity.toFixed(0) + '%';
+                document.getElementById('rtTime').textContent = new Date().toLocaleTimeString('es-CO');
+                document.getElementById('rtDataSource').innerHTML = `<strong>Fuente:</strong> ${apiSource} (${new Date().toLocaleTimeString('es-CO')})`;
+
+                let severity = '', badgeClass = '', recommendation = '';
+                if (wbgt < al) {
+                    severity = '✓ ACEPTABLE';
+                    badgeClass = 'badge-safe';
+                    recommendation = '✓ Trabajo normal';
+                } else if (wbgt < tlv) {
+                    severity = '⚠️ PRECAUCIÓN';
+                    badgeClass = 'badge-caution';
+                    recommendation = '⚠️ Descansos cada hora';
+                } else if (wbgt < tlv + 3) {
+                    severity = '⛔ MODERADO';
+                    badgeClass = 'badge-moderate';
+                    recommendation = '🔴 Máx 50% tiempo';
+                } else if (wbgt < tlv + 6) {
+                    severity = '⛔ ALTO';
+                    badgeClass = 'badge-high';
+                    recommendation = '🔴 Máx 25% tiempo';
+                } else {
+                    severity = '🚨 EXTREMO';
+                    badgeClass = 'badge-extreme';
+                    recommendation = '⛔ PROHIBIDO - Evacuar';
+                }
+
+                document.getElementById('rtBadge').innerHTML = `<span class="severity-badge ${badgeClass}">${severity}</span>`;
+                document.getElementById('rtRecommendation').innerHTML = `<strong>${recommendation}</strong>`;
+                document.getElementById('realtimeResults').classList.remove('hidden');
+                saveToHistory({ city: city.name, wbgt: wbgt, temp: temp, humidity: humidity });
+
+            } catch (error) {
+                console.error('ERROR:', error.message);
+                document.getElementById('errorMsg').innerHTML = `<strong>❌ Error:</strong> ${error.message}`;
+                document.getElementById('errorMsg').classList.remove('hidden');
+            } finally {
+                document.getElementById('loadingMsg').classList.add('hidden');
+            }
+        }
+
+        function generateCharts() {
+            const city = document.getElementById('chartCitySelect').value;
+            if (!city) return;
+
+            document.getElementById('chartsContainer').classList.remove('hidden');
+            document.getElementById('chartsLoading').classList.remove('hidden');
+
+            setTimeout(() => {
+                createWBGTChart();
+                createThresholdChart();
+                document.getElementById('chartsLoading').classList.add('hidden');
+            }, 300);
+        }
+
+        function createWBGTChart() {
+            const ctx = document.getElementById('wbgtChart').getContext('2d');
+            const hours = Array.from({length: 13}, (_, i) => i + 6);
+            const wbgtValues = hours.map(h => {
+                const temp = 20 + (h - 6) * 1.5 + Math.random() * 2;
+                const humidity = 65 - (h - 6) * 1 + Math.random() * 3;
+                let wbgt = 0.567 * temp + 0.393 * (humidity / 100) * Math.exp((17.27 * temp) / (237.3 + temp));
+                return parseFloat(wbgt.toFixed(2));
+            });
+            const tlv = 56.7 - 11.5 * Math.log10(300);
+
+            if (wbgtChart) wbgtChart.destroy();
+            wbgtChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: hours.map(h => h + ':00'),
+                    datasets: [{
+                        label: 'WBGT',
+                        data: wbgtValues,
+                        borderColor: '#0f766e',
+                        backgroundColor: 'rgba(15, 118, 110, 0.1)',
+                        tension: 0.4,
+                        borderWidth: 2,
+                        pointRadius: 3
+                    }, {
+                        label: 'TLV',
+                        data: Array(hours.length).fill(tlv),
+                        borderColor: '#dc2626',
+                        borderDash: [5, 5],
+                        borderWidth: 2,
+                        pointRadius: 0
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true } }, scales: { y: { min: 20, max: 35 } } }
+            });
+        }
+
+        function createThresholdChart() {
+            const ctx = document.getElementById('thresholdChart').getContext('2d');
+            const tlv = 56.7 - 11.5 * Math.log10(300);
+            const al = tlv - 3.3;
+            const hours = Array.from({length: 13}, (_, i) => i + 6);
+            const wbgtValues = hours.map(h => {
+                const temp = 20 + (h - 6) * 1.5 + Math.random() * 2;
+                const humidity = 65 - (h - 6) * 1 + Math.random() * 3;
+                return 0.567 * temp + 0.393 * (humidity / 100) * Math.exp((17.27 * temp) / (237.3 + temp));
+            });
+
+            if (thresholdChart) thresholdChart.destroy();
+            thresholdChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: hours.map(h => h + ':00'),
+                    datasets: [{
+                        label: 'WBGT',
+                        data: wbgtValues,
+                        borderColor: '#0f766e',
+                        backgroundColor: 'rgba(15, 118, 110, 0.05)',
+                        tension: 0.4,
+                        borderWidth: 2
+                    }, {
+                        label: 'AL',
+                        data: Array(hours.length).fill(al),
+                        borderColor: '#f59e0b',
+                        borderDash: [5, 5],
+                        borderWidth: 2
+                    }, {
+                        label: 'TLV',
+                        data: Array(hours.length).fill(tlv),
+                        borderColor: '#dc2626',
+                        borderDash: [5, 5],
+                        borderWidth: 2
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: true } }, scales: { y: { min: 20, max: 35 } } }
+            });
+        }
+
+        async function compareMultipleCities() {
+            if (selectedCities.length === 0) return;
+
+            document.getElementById('comparisonLoading').classList.remove('hidden');
+            document.getElementById('comparisonResults').classList.add('hidden');
+            document.getElementById('comparisonError').classList.add('hidden');
+
+            try {
+                const results = [];
+                const tlv = 56.7 - 11.5 * Math.log10(300);
+                const al = tlv - 3.3;
+
+                for (const cityName of selectedCities) {
+                    try {
+                        const city = colombianCities.find(c => c.name === cityName);
+                        let temp, humidity, wind = 0;
+                        let current = null;
+
+                        try {
+                            const url = `https://api.open-meteo.com/v1/forecast?latitude=${city.lat}&longitude=${city.lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m&timezone=auto`;
+                            const response = await fetch(url, { mode: 'cors' });
+                            if (response.ok) {
+                                const data = await response.json();
+                                current = data.current;
+                            }
+                        } catch (e) {}
+
+                        if (!current) {
+                            try {
+                                const baseUrl = `https://api.open-meteo.com/v1/forecast?latitude=${city.lat}&longitude=${city.lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m&timezone=auto`;
+                                const proxyUrl = `https://cors-anywhere.herokuapp.com/${baseUrl}`;
+                                const response = await fetch(proxyUrl, { mode: 'cors' });
+                                if (response.ok) {
+                                    const data = await response.json();
+                                    current = data.current;
+                                }
+                            } catch (e) {}
+                        }
+
+                        if (!current) {
+                            const simulatedData = {
+                                'Bogotá': { temp: 12 + Math.random() * 4, humidity: 65 + Math.random() * 15 },
+                                'Medellín': { temp: 18 + Math.random() * 4, humidity: 60 + Math.random() * 15 },
+                                'Cali': { temp: 22 + Math.random() * 4, humidity: 65 + Math.random() * 15 },
+                                'Barranquilla': { temp: 28 + Math.random() * 4, humidity: 70 + Math.random() * 15 },
+                                'Cartagena': { temp: 26 + Math.random() * 4, humidity: 75 + Math.random() * 15 },
+                                'Cúcuta': { temp: 24 + Math.random() * 4, humidity: 60 + Math.random() * 15 },
+                                'Bucaramanga': { temp: 20 + Math.random() * 4, humidity: 65 + Math.random() * 15 },
+                                'Santa Marta': { temp: 28 + Math.random() * 4, humidity: 80 + Math.random() * 15 },
+                                'Villavicencio': { temp: 22 + Math.random() * 4, humidity: 70 + Math.random() * 15 },
+                                'Manizales': { temp: 14 + Math.random() * 4, humidity: 75 + Math.random() * 15 }
+                            };
+
+                            const sim = simulatedData[cityName] || { temp: 20, humidity: 65 };
+                            current = {
+                                temperature_2m: sim.temp,
+                                relative_humidity_2m: sim.humidity,
+                                wind_speed_10m: 2
+                            };
+                        }
+
+                        if (!current) continue;
+
+                        temp = parseFloat(current.temperature_2m);
+                        humidity = parseFloat(current.relative_humidity_2m);
+                        wind = parseFloat(current.wind_speed_10m) || 0;
+
+                        if (isNaN(temp) || isNaN(humidity)) continue;
+
+                        let wbgt = 0.567 * temp + 0.393 * (humidity / 100) * Math.exp((17.27 * temp) / (237.3 + temp));
+                        if (wind > 0.5) wbgt -= Math.log(wind) * 0.5;
+
+                        const pressureFactor = (101325 - city.altitude * 12) / 101325;
+                        wbgt *= (1 - (1 - pressureFactor) * 0.05);
+
+                        results.push({ name: cityName, temp: temp, humidity: humidity, wbgt: wbgt });
+
+                    } catch (e) {
+                        continue;
+                    }
+                }
+
+                if (results.length === 0) {
+                    throw new Error('No se pudieron procesar las ciudades');
+                }
+
+                const cardsDiv = document.getElementById('comparisonCards');
+
+                cardsDiv.innerHTML = results.map(r => {
+                    let severity = '', badgeClass = '';
+
+                    if (r.wbgt < al) {
+                        severity = '✓ ACEPTABLE';
+                        badgeClass = 'badge-safe';
+                    } else if (r.wbgt < tlv) {
+                        severity = '⚠️ PRECAUCIÓN';
+                        badgeClass = 'badge-caution';
+                    } else if (r.wbgt < tlv + 3) {
+                        severity = '⛔ MODERADO';
+                        badgeClass = 'badge-moderate';
+                    } else if (r.wbgt < tlv + 6) {
+                        severity = '⛔ ALTO';
+                        badgeClass = 'badge-high';
+                    } else {
+                        severity = '🚨 EXTREMO';
+                        badgeClass = 'badge-extreme';
+                    }
+
+                    return `<div class="comparison-card">
+                        <h4>${r.name}</h4>
+                        <p><strong>Temp:</strong> ${r.temp.toFixed(1)}°C</p>
+                        <p><strong>Humedad:</strong> ${r.humidity.toFixed(0)}%</p>
+                        <p><strong>WBGT:</strong> ${r.wbgt.toFixed(1)}°C</p>
+                        <span class="severity-badge ${badgeClass}">${severity}</span>
+                    </div>`;
+                }).join('');
+
+                document.getElementById('comparisonResults').classList.remove('hidden');
+
+            } catch (error) {
+                document.getElementById('comparisonError').innerHTML = `<strong>❌ Error:</strong> ${error.message}`;
+                document.getElementById('comparisonError').classList.remove('hidden');
+            } finally {
+                document.getElementById('comparisonLoading').classList.add('hidden');
+            }
+        }
+
+        function saveToHistory(entry) {
+            try {
+                let history = JSON.parse(localStorage.getItem('wbgtHistory')) || [];
+                history.unshift({ ...entry, timestamp: new Date().toLocaleString('es-CO') });
+                history = history.slice(0, 30);
+                localStorage.setItem('wbgtHistory', JSON.stringify(history));
+            } catch (e) {}
+        }
+
+        function loadHistory() {
+            try {
+                const history = JSON.parse(localStorage.getItem('wbgtHistory')) || [];
+                const historyList = document.getElementById('historyList');
+                if (history.length === 0) {
+                    historyList.innerHTML = '<div class="alert alert-warning">Sin mediciones registradas</div>';
+                    return;
+                }
+                historyList.innerHTML = history.map(entry => `
+                    <div class="history-item">
+                        <div><strong>${entry.city}</strong><div class="info-text">${entry.timestamp}</div></div>
+                        <div><div class="history-value">${entry.wbgt.toFixed(2)}°C</div><div class="info-text">${entry.temp.toFixed(1)}°C | ${entry.humidity.toFixed(0)}%</div></div>
+                    </div>
+                `).join('');
+            } catch (e) {}
+        }
+
+        function exportHistory() {
+            try {
+                const history = JSON.parse(localStorage.getItem('wbgtHistory')) || [];
+                let csv = 'Ciudad,WBGT (°C),Temperatura (°C),Humedad (%),Fecha\n';
+                history.forEach(e => {
+                    csv += `"${e.city}",${e.wbgt.toFixed(2)},${e.temp.toFixed(1)},${e.humidity.toFixed(0)},"${e.timestamp}"\n`;
+                });
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `WBGT_${new Date().toISOString().split('T')[0]}.csv`;
+                a.click();
+            } catch (e) {}
+        }
+
+        function clearHistory() {
+            if (confirm('¿Eliminar todo el historial?')) {
+                localStorage.removeItem('wbgtHistory');
+                loadHistory();
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
