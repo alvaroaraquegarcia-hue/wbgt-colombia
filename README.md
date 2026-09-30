@@ -1,80 +1,41 @@
-# 🌡️ Calculadora WBGT Colombia v7
+# WBGT Colombia V1 · SCHO
 
-**Herramienta de evaluación de estrés térmico ocupacional para profesionales de higiene ocupacional colombianos.**
+**Herramienta gratuita para estimar el índice WBGT y evaluar el estrés térmico ocupacional según los criterios de la ACGIH.**
+Sociedad Colombiana de Higienistas Ocupacionales (SCHO) · Álvaro Araque García, Comité Académico.
 
-## 📱 Acceso Rápido
+## Acceso
 
-**Web:** [https://alvaroaraquegarcia.github.io/wbgt-colombia/](https://alvaroaraquegarcia.github.io/wbgt-colombia/)
+**https://alvaroaraquegarcia-hue.github.io/wbgt-colombia/**
 
-**App en iPhone:** 
-1. Safari → Pega el enlace arriba
-2. Compartir (↑) → "Añadir a pantalla de inicio"
-3. ¡Listo! Ya tienes icono en tu home
+- **iPhone (Safari):** abra el enlace → Compartir → *Añadir a pantalla de inicio*.
+- **Android (Chrome):** abra el enlace → menú ⋮ → *Instalar app* o *Añadir a pantalla de inicio*.
+- **Computador:** abra el enlace en cualquier navegador.
 
-**App en Android:**
-1. Chrome → Pega el enlace arriba
-2. Menú (⋮) → "Instalar app"
-3. ¡Ya está lista!
+## Funciones
 
----
+- **Ciudad (tiempo real):** WBGT estimado ahora y pronóstico por horas para 10 ciudades colombianas, al sol o a la sombra.
+- **Cálculo manual:** WBGT a partir de temperatura, humedad, viento y radiación solar propios.
+- **Mediciones ISO 7243:** WBGT a partir de Tnw, Tg y Ta medidos con monitor.
+- **Evaluación ACGIH:** TLV y Límite de Acción según la carga metabólica, ajuste por vestimenta (CAF) y aclimatación.
+- **Historial:** últimos 30 cálculos guardados solo en el dispositivo, exportables a CSV.
 
-## ✨ Características
+## Método
 
-- 📋 **Manual:** Cálculo WBGT con datos meteorológicos propios
-- 📡 **Tiempo Real:** Datos en vivo de 10 ciudades colombianas
-- 📊 **Gráficos:** Visualización de tendencias horarias
-- 🔍 **Comparar:** Evalúa múltiples ciudades simultáneamente
-- 📚 **Historial:** Guarda últimas 30 mediciones (en tu dispositivo)
-- 📖 **Referencia:** Tabla de severidad ACGIH
+- WBGT exterior = 0,7·Tnw + 0,2·Tg + 0,1·Ta; interior o sombra = 0,7·Tnw + 0,3·Tg (ISO 7243).
+- Cuando no hay medición directa, Tnw y Tg se estiman con el modelo de Liljegren et al. (2008), traducido del código de referencia del Argonne National Laboratory.
+- TLV = 56,7 − 11,5·log₁₀(M); AL = 59,9 − 14,1·log₁₀(M), con M en vatios (ACGIH).
+- Datos meteorológicos: Open-Meteo.com (CC BY 4.0).
 
-## 🔧 Características Técnicas
+Los resultados son estimaciones y no reemplazan la medición en el puesto de trabajo con un monitor WBGT calibrado.
 
-- **Modelo:** Liljegren (ISO 7243)
-- **Estándares:** ACGIH TLV 2026
-- **Datos:** Open-Meteo API + fallback simulado
-- **Offline:** Funciona sin internet (excepto Tiempo Real)
-- **Privacidad:** 100% local, sin servidores
-- **Dispositivos:** iPhone, Android, Computadora
-- **Navegadores:** Safari, Chrome, Firefox, Edge
+## Referencias
 
-## 📚 Documentación Completa
+- Liljegren JC, Carhart RA, Lawday P, Tschopp S, Sharp R. Modeling the Wet Bulb Globe Temperature Using Standard Meteorological Measurements. *J Occup Environ Hyg.* 2008;5(10):645-655.
+- ISO 7243:2017. Ergonomics of the thermal environment — Assessment of heat stress using the WBGT index.
+- ACGIH. TLVs® and BEIs® — Heat Stress and Strain.
 
-Descarga en la carpeta `/docs/`:
-- `WBGT_v7_Manual_Usuario.md` - Manual completo con ejemplos
-- `WBGT_v7_Guia_Instalacion.md` - Pasos de instalación detallados
-- `WBGT_v7_Ficha_Tecnica.md` - Especificaciones técnicas
-- `WBGT_v7_Guia_Rapida_Colegas.md` - Guía rápida para compartir
+## Historial de versiones
 
-## 🏢 Para SCHO
+- **Versión 1.0 (septiembre 2026):** primera versión oficial SCHO. Motor de cálculo con el modelo de Liljegren e ISO 7243, criterios ACGIH con CAF y aclimatación, pronóstico horario real. Reemplaza el prototipo anterior, que subestimaba el WBGT.
 
-Desarrollado para la **Sociedad Colombiana de Higienistas Ocupacionales (SCHO)**
-
-**Contacto:** Álvaro Araque García  
-**Email:** alvaroaraquegarcia@hotmail.com
-
----
-
-## 📄 Licencia
-
-Para uso técnico interno de SCHO y afiliados. Septiembre 2026.
-
----
-
-## 🌍 Ciudades Disponibles
-
-| Ciudad | Altitud | Tipo de Clima |
-|--------|---------|---------------|
-| Bogotá | 2640 m | Altiplano |
-| Medellín | 1495 m | Montaña tropical |
-| Cali | 1000 m | Vallecauca |
-| Barranquilla | 5 m | Caribeño |
-| Cartagena | 2 m | Caribeño |
-| Cúcuta | 320 m | Tropical seco |
-| Bucaramanga | 959 m | Montaña tropical |
-| Santa Marta | 7 m | Caribeño |
-| Villavicencio | 467 m | Llanero |
-| Manizales | 2150 m | Montaña |
-
----
-
-**v7.0 | Septiembre 2026 | ✅ Estable y operativa**
+Contacto: alvaroaraquegarcia@hotmail.com
